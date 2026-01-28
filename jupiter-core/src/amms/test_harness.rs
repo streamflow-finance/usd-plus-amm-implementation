@@ -74,6 +74,8 @@ pub static SPL_TOKEN_MINT_TO_IN_AMOUNT: LazyLock<HashMap<Pubkey, u64>> = LazyLoc
             pubkey!("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
             1_110_000_000,
         ),
+        (constants::WM_MINT, 1_000_000_000),
+        (constants::USD_PLUS_MINT, 1_000_000_000),
     ])
 });
 
@@ -207,6 +209,7 @@ impl AmmTestHarnessProgramTest {
             destination_mint,
             expected_error.is_some(),
         );
+        println!("Quote: {quote_result:?}");
 
         let user = self.program_test_user.keypair.pubkey();
         let user_source_token_account = self

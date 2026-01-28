@@ -10,4 +10,5 @@ pub use amms::amm;
 pub use amms::test_harness;
 mod active_features;
 mod aggregator_version;
+pub mod errors;
 mod solana_rpc_utils;
