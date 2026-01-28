@@ -38,7 +38,7 @@ impl UsdPlusAmm {
     pub const USD_PLUS_EXT_PROGRAM_ID: Pubkey =
         pubkey!("extUkDFf3HLekkxbcZ3XRUizMjbxMJgKBay3p9xGVmg");
 
-    pub fn get_program_id_for_mint(mint: &Pubkey) -> Result<Pubkey> {
+    pub fn get_ext_program_id_for_mint(mint: &Pubkey) -> Result<Pubkey> {
         match mint {
             &WM_MINT => Ok(Self::WM_EXT_PROGRAM_ID),
             &USD_PLUS_MINT => Ok(Self::USD_PLUS_EXT_PROGRAM_ID),
@@ -74,7 +74,7 @@ impl UsdPlusAmm {
         get_associated_token_address_with_program_id(authority, &M_MINT, &spl_token_2022::id())
     }
 
-    pub fn is_allowed_mint(mint: &Pubkey) -> bool {
+    pub fn is_mint_supported(mint: &Pubkey) -> bool {
         WM_MINT.eq(mint) || USD_PLUS_MINT.eq(mint)
     }
 }
@@ -132,10 +132,10 @@ impl Amm for UsdPlusAmm {
     }
 
     fn quote(&self, quote_params: &QuoteParams) -> Result<Quote> {
-        if !UsdPlusAmm::is_allowed_mint(&quote_params.input_mint) {
+        if !UsdPlusAmm::is_mint_supported(&quote_params.input_mint) {
             return Err(unsupported_input_mint(&quote_params.input_mint));
         }
-        if !UsdPlusAmm::is_allowed_mint(&quote_params.output_mint) {
+        if !UsdPlusAmm::is_mint_supported(&quote_params.output_mint) {
             return Err(unsupported_output_mint(&quote_params.output_mint));
         }
 
@@ -153,8 +153,8 @@ impl Amm for UsdPlusAmm {
     }
 
     fn get_swap_and_account_metas(&self, swap_params: &SwapParams) -> Result<SwapAndAccountMetas> {
-        let from_program_id = Self::get_program_id_for_mint(&swap_params.source_mint)?;
-        let to_program_id = Self::get_program_id_for_mint(&swap_params.destination_mint)?;
+        let from_program_id = Self::get_ext_program_id_for_mint(&swap_params.source_mint)?;
+        let to_program_id = Self::get_ext_program_id_for_mint(&swap_params.destination_mint)?;
         let swap_global = Self::find_swap_global_pubkey();
         let from_m_vault_auth = Self::find_ext_vault_authority(&from_program_id);
         let to_m_vault_auth = Self::find_ext_vault_authority(&to_program_id);
