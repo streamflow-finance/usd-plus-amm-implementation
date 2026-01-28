@@ -4,7 +4,7 @@ use crate::{
     errors::{unsupported_input_mint, unsupported_output_mint},
     math::m_swap::swap_ext_amounts,
 };
-use anchor_lang::{ToAccountMetas, prelude::AccountDeserialize};
+use anchor_lang::{prelude::AccountDeserialize, ToAccountMetas};
 use anyhow::{anyhow, Context, Result};
 use jupiter_amm_interface::{try_get_account_data, AccountMap, AmmContext};
 use program_interfaces::{
@@ -84,15 +84,12 @@ impl AmmProgramIdToLabel for UsdPlusAmm {
 }
 
 impl Amm for UsdPlusAmm {
-    fn from_keyed_account(
-        keyed_account: &KeyedAccount,
-        _amm_context: &AmmContext,
-    ) -> Result<Self> {
+    fn from_keyed_account(keyed_account: &KeyedAccount, _amm_context: &AmmContext) -> Result<Self> {
         let mut data: &[u8] = &keyed_account.account.data;
         let swap_global = SwapGlobal::try_deserialize(&mut data)?;
 
         Ok(Self {
-            key: Self::find_swap_global_pubkey(),
+            key: keyed_account.key,
             label: String::from("M Swap"),
             program_id: M_SWAP_ID,
             swap_global,
@@ -117,7 +114,7 @@ impl Amm for UsdPlusAmm {
     }
 
     fn get_accounts_to_update(&self) -> Vec<Pubkey> {
-        vec![M_MINT]
+        vec![M_MINT, self.key]
     }
 
     fn update(&mut self, account_map: &AccountMap) -> Result<()> {
@@ -125,6 +122,10 @@ impl Amm for UsdPlusAmm {
         let state = StateWithExtensions::<Mint>::unpack(m_zero_mint)?;
         let scaled_ui = state.get_extension::<ScaledUiAmountConfig>().ok().copied();
 
+        let mut data = try_get_account_data(account_map, &self.key)?;
+        let swap_global = SwapGlobal::try_deserialize(&mut data)?;
+
+        self.swap_global = swap_global;
         self.m_zero_scaled_ui = scaled_ui;
 
         Ok(())
